@@ -23,6 +23,10 @@ final class DatabaseSeeder extends Seeder
         if (app()->environment('production')) {
             return;
         }
+
+        // Rodar SearchRuleSeeder
+        $this->call(SearchRuleSeeder::class);
+
         // Reset cached roles and permissions
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
