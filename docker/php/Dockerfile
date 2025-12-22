@@ -9,6 +9,7 @@ RUN install-php-extensions gd
 RUN install-php-extensions bcmath
 RUN install-php-extensions sockets
 RUN install-php-extensions pcov
+RUN install-php-extensions exif
 
 COPY zzz-custom-php.ini /usr/local/etc/php/conf.d/
 
