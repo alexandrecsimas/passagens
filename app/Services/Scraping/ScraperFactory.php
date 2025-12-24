@@ -13,8 +13,8 @@ class ScraperFactory
     {
         return match($source) {
             'mock' => new MockScraper(),
-            'skyscanner' => throw new Exception('SkyscannerScraper ainda não implementado'),
-            'google_flights' => throw new Exception('GoogleFlightsScraper ainda não implementado'),
+            'skyscanner' => new SkyscannerScraper(),
+            'google_flights' => new GoogleFlightsScraper(),
             default => throw new Exception("Fonte desconhecida: {$source}"),
         };
     }
@@ -36,6 +36,6 @@ class ScraperFactory
      */
     public static function getImplementedSources(): array
     {
-        return ['mock'];
+        return ['mock', 'skyscanner', 'google_flights'];
     }
 }
