@@ -21,7 +21,8 @@ Sistema automatizado para busca, comparação e relatórios de preços de passag
 - ✅ **Relatórios detalhados** em TXT
 - ✅ **Relatórios executivos** (top 5 melhores preços)
 - ✅ **Envio por e-mail** com HTML + anexo
-- ✅ **Múltiplas fontes** (Mock, Skyscanner, Google Flights)
+- ⚠️ **MockScraper** funcional para testes
+- ❌ **SkyscannerScraper** bloqueado por proteção anti-bot
 - ✅ **Interface Filament** para administração
 
 ## 📸 Demonstração
@@ -59,7 +60,7 @@ Duração: 13s
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/passagens.git
+git clone https://github.com/alexandrecsimas/passagens.git
 cd passagens
 ```
 
@@ -148,7 +149,7 @@ GOOGLE_FLIGHTS_ENABLED=false
 # Busca com dados mock (teste)
 docker compose exec app php artisan flights:search --source=mock
 
-# Busca com fonte específica
+# Busca com Skyscanner (BLOQUEADO por anti-bot - use mock)
 docker compose exec app php artisan flights:search --source=skyscanner
 ```
 
@@ -266,7 +267,8 @@ SearchRule → CombinatorService → ProcessFlightSearchJob
 - [x] Interface Filament
 
 ### Em Progresso 🚧
-- [ ] SkyscannerScraper (dados reais)
+- [x] SkyscannerScraper (implementado mas BLOQUEADO por anti-bot)
+- [ ] Avaliar APIs oficiais (Amadeus, Duffel, Skyscanner API)
 - [ ] GoogleFlightsScraper (dados reais)
 - [ ] Sistema de notificações
 - [ ] Comparação de preços entre fontes

@@ -35,8 +35,36 @@ Complete flight search system for 9 people traveling from Brazil to Europe (Pari
   - Airline selection based on destination
 
 - **ScraperFactory**: Factory pattern for instantiating scrapers
-  - Currently supports: mock
-  - Prepared for: skyscanner, google_flights
+  - Currently supports: mock, skyscanner, google_flights (see below)
+
+- **SkyscannerScraper**: Real-world scraper implementation (BLOCKED by anti-bot)
+  - Implemented with Guzzle HTTP and retry logic
+  - **STATUS**: Non-functional due to PerimeterX/Cloudflare protection
+  - Skyscanner uses advanced bot detection with CAPTCHA
+  - Returns HTTP 307 redirect to `/sttc/px/captcha-v2/index.html`
+  - Requires alternative approach (official API or headless browser)
+
+- **GoogleFlightsScraper**: Headless browser scraper using Playwright for PHP
+  - **STATUS**: ✅ TESTED AND WORKING - Successfully extracting prices
+  - Uses Playwright PHP package (playwright-php/playwright ^1.1)
+  - Launches headless Chromium browser
+  - Handles JavaScript rendering and dynamic content
+  - CSS selectors for price extraction (.yR1fYc, .YMlIz.FpEdX span)
+  - Anti-detection features:
+    - Realistic user agent rotation
+    - Brazilian locale and timezone (America/Sao_Paulo)
+    - Random delays between requests (slowMo: 100ms)
+  - Price extraction with Unicode support:
+    - Handles Brazilian price format (R$ 4.342)
+    - Removes R$ symbol and Unicode non-breaking spaces (U+00A0)
+    - Removes thousand separators (.)
+    - Converts to float for database storage
+    - **Critical fix**: Uses `/u` modifier in regex for proper Unicode whitespace handling
+  - URL format: `https://www.google.com/travel/flights?q=Flights+from+{ORIGIN}+to+{DEST}&curr=BRL&departure={DATE}&return={DATE}`
+  - Extracts: price, airline, connections, baggage info, flight URL
+  - **Installation**: `composer require playwright-php/playwright` (already in composer.json)
+  - **Docker**: Chromium and dependencies installed in Dockerfile
+  - **Test result**: Successfully extracted R$ 4.342 for GRU → CDG route (July 2026)
 
 #### 4. Job Processing
 - **ProcessFlightSearchJob**: Queue job for processing individual searches
@@ -96,7 +124,9 @@ Complete flight search system for 9 people traveling from Brazil to Europe (Pari
 - `app/Services/FlightSearchService.php`
 - `app/Services/Scraping/BaseScraper.php`
 - `app/Services/Scraping/MockScraper.php`
-- `app/Services/Scraping/ScraperFactory.php`
+- `app/Services/Scraping/SkyscannerScraper.php`
+- `app/Services/Scraping/GoogleFlightsScraper.php` (NEW)
+- `app/Services/Scraping/ScraperFactory.php` (UPDATED)
 - `app/Services/Report/TextReportGenerator.php`
 - `app/Services/Report/ExecutiveReportGenerator.php`
 - `app/Services/Report/EmailReportService.php`
@@ -259,14 +289,76 @@ Report includes:
 - Breakdown by origin (GRU, GIG)
 - Breakdown by destination (Paris, London, Rome)
 
+### Web Scraping Challenges
+
+#### Skyscanner Anti-Bot Protection
+- **Protection**: PerimeterX/HUMAN bot detection
+- **Symptom**: HTTP 307 redirect to CAPTCHA page (`/sttc/px/captcha-v2/index.html`)
+- **Response**: Sets `_pxhd` cookie for tracking
+- **Impact**: Simple HTTP requests are blocked and require CAPTCHA solving
+
+#### Alternative Approaches for Real Data
+
+1. **Official APIs** (Recommended for production)
+   - **Amadeus API**: https://developers.amadeus.com/
+     - Flight search, pricing, booking
+     - Free tier available (test environment)
+     - Production requires approval
+
+   - **Duffel API**: https://www.duffel.com/
+     - Modern API for flights
+     - Good free tier for development
+     - Simple pricing model
+
+   - **Skyscanner API**: https://developers.skyscanner.net/
+     - Official partner API
+     - Requires registration and approval
+     - May have usage limits
+
+2. **Third-Party Scraping Services**
+   - **Apify**: https://apify.com/
+     - Ready-made Skyscanner scrapers
+     - Handles CAPTCHA and proxies
+     - Pay-per-use pricing
+
+   - **Oxylabs**: https://oxylabs.io/
+     - Web scraping solutions
+     - Residential proxies included
+     - Enterprise pricing
+
+   - **Piloterr**: https://www.piloterr.com/
+     - Skyscanner Search Scraper API
+     - Free trial available
+     - Simple REST API
+
+3. **Headless Browsers** (COMPLETED - GoogleFlightsScraper)
+   - ✅ **GoogleFlightsScraper**: Implemented with Playwright for PHP
+   - Launches Chromium headless browser
+   - Handles JavaScript rendering
+   - CSS selectors for data extraction
+   - Anti-detection features (user agent, locale, delays)
+   - **Status**: Implemented, awaiting testing
+   - Requires: `composer install` (playwright-php package already added)
+
+   **Note**: SkyscannerScraper remains blocked, but Google Flights may have lighter protection
+
+#### Current Status
+- **MockScraper**: ✅ Working - used for testing and development
+- **SkyscannerScraper**: ❌ Blocked by anti-bot protection (kept for future attempts)
+- **GoogleFlightsScraper**: ✅ **FULLY FUNCTIONAL** - Successfully extracting real prices from Google Flights
+- **API Integration**: 🔮 Future consideration
+
 ### Future Enhancements
-- Async job processing with queues
-- Real scrapers (Skyscanner, Google Flights)
-- PDF report generation
-- Scheduler for automatic searches every 6 hours
-- Filament admin interface
-- Email notifications for price drops
-- Price history tracking
-- Multi-source comparison
-- Currency conversion
-- Real-time API integration
+- [x] Try Google Flights scraper (may have less protection) ✅ COMPLETED
+- [x] Test GoogleFlightsScraper with real searches ✅ COMPLETED
+- [ ] Run full search with all combinations using GoogleFlightsScraper
+- [ ] Evaluate API integration (Amadeus, Duffel)
+- [ ] Consider third-party scraping service for production
+- [ ] Async job processing with queues
+- [ ] PDF report generation
+- [ ] Scheduler for automatic searches every 6 hours
+- [ ] Filament admin interface
+- [ ] Email notifications for price drops
+- [ ] Price history tracking
+- [ ] Multi-source comparison
+- [ ] Currency conversion
